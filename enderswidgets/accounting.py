@@ -55,8 +55,8 @@ display_names = {
 
 
 class AccountingDataVisualizer:
-    def __init__(self, account_model):
-        self.account_model = account_model
+    def __init__(self, account_model, kwargs=None):
+        self.account_model = account_model(kwargs) if kwargs else account_model()
         self.accountants = {}
         self.df = pd.DataFrame(columns=[
             "stream_id", "current_ndx", "num_resolved_decisions", "total_profit",
