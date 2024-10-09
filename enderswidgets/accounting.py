@@ -55,8 +55,9 @@ display_names = {
 
 
 class AccountingDataVisualizer:
-    def __init__(self, account_model, kwargs=None):
-        self.account_model = account_model(kwargs) if kwargs else account_model()
+    def __init__(self, account_model, **kwargs):
+        self.kwargs = kwargs or {}
+        self.account_model = account_model
         self.accountants = {}
         self.df = pd.DataFrame(columns=[
             "stream_id", "current_ndx", "num_resolved_decisions", "total_profit",
@@ -73,7 +74,7 @@ class AccountingDataVisualizer:
 
     def process(self, point: StreamPoint, prediction: Prediction):
         if point.substream_id not in self.accountants:
-            self.accountants[point.substream_id] = self.account_model()
+            self.accountants[point.substream_id] = self.account_model(self.kwargs)
         accountant = self.accountants[point.substream_id]
         accountant.tick(point.value, prediction.horizon, prediction.value)
         self.update_data(point.substream_id, accountant.summary())
