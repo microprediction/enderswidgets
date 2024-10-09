@@ -78,7 +78,7 @@ def replay(streams: Union[Iterable[Iterable[T]], Iterable[T], Iterable[float]], 
         print("Please define the 'infer' function in the main module.")
         return
     ready_streams = process_streams(streams)
-    accounting = AccountingDataVisualizer()
+    accounting = AccountingDataVisualizer(Pnl, backoff=0)
     for stream_id, stream in enumerate(ready_streams):
         viz = TimeSeriesVisualizer() if with_visualization else NoOp()
         prediction_generator = infer(stream, horizon)
