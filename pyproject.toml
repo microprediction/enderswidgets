@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "enderswidgets"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+endersgame = "^0.4.4"
+pandas = "^2.2.3"
+ipywidgets = "^8.1.5"
+matplotlib = "^3.9.2"
+pydantic = "^2.9.2"
+
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
