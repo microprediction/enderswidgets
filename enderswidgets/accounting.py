@@ -74,7 +74,7 @@ class AccountingDataVisualizer:
 
     def process(self, point: StreamPoint, prediction: Prediction):
         if point.substream_id not in self.accountants:
-            self.accountants[point.substream_id] = self.account_model(self.kwargs)
+            self.accountants[point.substream_id] = self.account_model(**self.kwargs)
         accountant = self.accountants[point.substream_id]
         accountant.tick(point.value, prediction.horizon, prediction.value)
         self.update_data(point.substream_id, accountant.summary())
