@@ -4,7 +4,6 @@ from IPython.display import display
 import ipywidgets as widgets
 from typing import Dict
 import warnings
-from endersgame.accounting.pnl import Pnl
 from enderswidgets.streams import StreamPoint, Prediction
 
 # Suppress FutureWarning
@@ -56,8 +55,8 @@ display_names = {
 
 
 class AccountingDataVisualizer:
-    def __init__(self):
-        self.account_model = Pnl
+    def __init__(self, account_model):
+        self.account_model = account_model
         self.accountants = {}
         self.df = pd.DataFrame(columns=[
             "stream_id", "current_ndx", "num_resolved_decisions", "total_profit",
@@ -90,6 +89,9 @@ class AccountingDataVisualizer:
     def update_display(self):
         with self.output:
             self.table_widget.value = self.data()
+
+    def profit(self):
+        return self.df['total_profit'].sum()
 
     def clear(self):
         pass
