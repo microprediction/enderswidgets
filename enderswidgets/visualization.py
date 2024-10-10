@@ -20,7 +20,7 @@ def margin_up(y: float, margin: float = 0.005) -> float:
 
 # Define optimized TimeSeriesVisualizer class
 class TimeSeriesVisualizer:
-    def __init__(self, max_points: int = 200, update_interval: int = 10):
+    def __init__(self, max_points: int = 200, update_interval: int = 5):
         self.max_points = max_points
         self.update_interval = update_interval
 
@@ -59,18 +59,19 @@ class TimeSeriesVisualizer:
         self.ax.tick_params(axis='x', colors='white')
         self.ax.tick_params(axis='y', colors='white')
 
-    def process(self, data: StreamPoint, prediction: Prediction):
+    def process(self, data: StreamPoint, pred: Prediction):
         """Update the plot with new data from StreamPoint."""
         # Append new data to deques
         self.times.append(data.ndx)
         self.values.append(data.value)
-        self.prediction_times.append(prediction.ndx)
-        self.predictions.append(prediction.value)
+        self.prediction_times.append(pred.ndx)
+        self.predictions.append(pred.value)
 
         self.update_counter += 1
 
         # Update plot at specified intervals
         if self.update_counter % self.update_interval == 0:
+
             self._update_plot()
 
     def _update_plot(self):
@@ -115,18 +116,3 @@ class TimeSeriesVisualizer:
         self.ax.autoscale_view()
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
-
-if __name__ == "__main__":
-    import time
-
-    # Example usage
-    visualizer = TimeSeriesVisualizer(max_points=200, update_interval=10)
-
-    # Simulate data stream
-    for i in range(1000):
-        data = StreamPoint(ndx=i, value=np.sin(i/50) + np.random.normal(0, 0.1))
-        prediction = Prediction(ndx=i+1, value=np.random.choice([-1, 0, 1]))
-        visualizer.process(data, prediction)
-        time.sleep(0.01)  # Simulate real-time data arrival
-
-    plt.show()

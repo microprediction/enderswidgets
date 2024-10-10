@@ -1,7 +1,5 @@
-from typing import Iterable
-
 from endersgame.accounting.pnl import Pnl
-
+from crunch.container import StreamMessage
 from enderswidgets.accounting import AccountingDataVisualizer
 from enderswidgets.streams import StreamPoint, Prediction
 from enderswidgets.visualization import TimeSeriesVisualizer
@@ -40,7 +38,7 @@ def process_streams(streams: Union[Iterable[Iterable[T]], Iterable[T], Iterable[
                 for sub_item in item:
                     if isinstance(sub_item, (float, np.floating)):
                         sub_result.append(wrap_float(sub_item))
-                    elif isinstance(sub_item, dict):
+                    elif isinstance(sub_item, (dict, StreamMessage)):
                         sub_result.append(sub_item)
                     else:
                         raise ValueError(f"Unsupported type in nested iterable: {type(sub_item)}")
@@ -78,7 +76,7 @@ def replay(streams: Union[Iterable[Iterable[T]], Iterable[T], Iterable[float]], 
         print("Please define the 'infer' function in the main module.")
         return
     ready_streams = process_streams(streams)
-    accounting = AccountingDataVisualizer(Pnl, backoff=0)
+    accounting = AccountingDataVisualizer(Pnl)
     for stream_id, stream in enumerate(ready_streams):
         viz = TimeSeriesVisualizer() if with_visualization else NoOp()
         prediction_generator = infer(stream, horizon)
