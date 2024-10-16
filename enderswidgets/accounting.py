@@ -53,9 +53,10 @@ display_names = {
     "avg_profit_per_decision_std_ratio": "Avg Profit/Decision Std Ratio"
 }
 
-
 class AccountingDataVisualizer:
-    def __init__(self, account_model, **kwargs):
+    def __init__(self, account_model, update_every=100, **kwargs):
+        self.n = 0
+        self.update_every = update_every
         self.kwargs = kwargs or {}
         self.account_model = account_model
         self.accountants = {}
@@ -73,12 +74,14 @@ class AccountingDataVisualizer:
         return custom_css + table_html
 
     def process(self, point: StreamPoint, prediction: Prediction):
+        self.n += 1
         if point.substream_id not in self.accountants:
             self.accountants[point.substream_id] = self.account_model(**self.kwargs)
         accountant = self.accountants[point.substream_id]
         accountant.tick(point.value, prediction.horizon, prediction.value)
         self.update_data(point.substream_id, accountant.summary())
-        self.update_display()
+        if self.n % self.update_every == 0:
+            self.update_display()
 
     def update_data(self, stream_id: str, summary: Dict):
         if stream_id in self.df['stream_id'].values:

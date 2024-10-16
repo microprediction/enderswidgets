@@ -4,7 +4,7 @@ from enderswidgets.accounting import AccountingDataVisualizer
 from enderswidgets.streams import StreamPoint, Prediction
 from enderswidgets.visualization import TimeSeriesVisualizer
 
-from typing import Union, Iterable, List, Dict, TypeVar, Any
+from typing import Union, Iterable, List, Dict, TypeVar, Any, Optional
 import numpy as np
 
 T = TypeVar('T', bound=Dict[str, Any])
@@ -62,22 +62,29 @@ class NoOp:
     def process(self, *args, **kwargs):
         pass
 
-def replay(streams: Union[Iterable[Iterable[T]], Iterable[T], Iterable[float]], horizon: int, with_visualization: bool = False) -> float:
+def replay(streams: Union[Iterable[Iterable[T]], Iterable[T], Iterable[float]],
+           horizon: int,
+           with_visualization: bool = False,
+           with_accounting_visualizer: bool = False) -> Optional[float]:
     """
     Replay a set of streams, visualize the results and return the total profit
     :param streams:
     :param horizon:
     :param with_visualization:
+    :param with_accounting_visualizer:
     :return:
     """
     try:
         from __main__ import infer
     except ImportError:
         print("Please define the 'infer' function in the main module.")
-        return
+        return None
     ready_streams = process_streams(streams)
-    accounting = AccountingDataVisualizer(Pnl)
+    accounting = AccountingDataVisualizer(Pnl) if with_accounting_visualizer else NoOp()
+    score = 0.
     for stream_id, stream in enumerate(ready_streams):
+        print(f"Processing stream {stream_id}")
+        pnl = Pnl()
         viz = TimeSeriesVisualizer() if with_visualization else NoOp()
         prediction_generator = infer(stream, horizon)
         next(prediction_generator)
@@ -87,4 +94,7 @@ def replay(streams: Union[Iterable[Iterable[T]], Iterable[T], Iterable[float]], 
             pred = Prediction(value=prediction, ndx=idx+horizon, horizon=horizon)
             accounting.process(data, pred)
             viz.process(data, pred)
-    return accounting.profit()
+            pnl.tick(data_point['x'], horizon, prediction)
+        print("Profit", stream_id, pnl.summary()['total_profit'])
+        score += pnl.summary()['total_profit']
+    return score
