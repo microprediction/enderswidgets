@@ -163,3 +163,5 @@ cython_debug/
 data
 *.ipynb
 .crunchdao
+main.py
+requirements.txt
