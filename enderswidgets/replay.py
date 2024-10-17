@@ -66,48 +66,92 @@ class NoOp:
 
 
 
+class ReplayResults:
+    def __init__(self):
+        self.scores = {}
+        self.visualizers: Dict[int, TimeSeriesVisualizer] = {}
+        self.accounting_visualizer = None
+        self.total_score = 0.0
+
+
+    def get_selected_points(self) -> List[tuple]:
+        for stream_id in self.visualizers:
+            if len(self.visualizers[stream_id].selected_data) > 0:
+                return [pt[1] for pt in self.visualizers[stream_id].selected_data]
+        return []
+
+
 def replay(streams: Union[Iterable[Iterable[T]], Iterable[T], Iterable[float]],
            horizon: int,
+           only_stream_ids: Optional[List[int]] = None,
+           start_index: int = 0,
+           stop_index: int = None,
            update_frequency: int = 50,
            with_visualization: bool = False,
-           with_accounting_visualizer: bool = False) -> Optional[float]:
+           with_accounting_visualizer: bool = False) -> ReplayResults:
     """
     Replay a set of streams, visualize the results and return the total profit
+    :param stop_index:
+    :param start_index:
+    :param only_stream_ids:
     :param update_frequency:
     :param streams:
     :param horizon:
     :param with_visualization:
     :param with_accounting_visualizer:
-    :return:
+    :return: ReplayResults object containing visualizers and total score
     """
     try:
         from __main__ import infer
     except ImportError:
         print("Please define the 'infer' function in the main module.")
         return None
+
     ready_streams = process_streams(streams)
-    accounting = AccountingDataVisualizer(Pnl) if with_accounting_visualizer else NoOp()
-    score = 0.
+    results = ReplayResults()
+
+    if with_accounting_visualizer:
+        results.accounting_visualizer = AccountingDataVisualizer(Pnl)
+    else:
+        results.accounting_visualizer = NoOp()
+
+    if isinstance(only_stream_ids, int):
+        only_stream_ids = [only_stream_ids]
+
     for stream_id, stream in enumerate(ready_streams):
+        if only_stream_ids and stream_id not in only_stream_ids:
+            continue
         print(f"Processing stream {stream_id}")
         pnl = Pnl()
-        viz = TimeSeriesVisualizer() if with_visualization else NoOp()
+
+        if with_visualization:
+            viz = TimeSeriesVisualizer()
+            results.visualizers[stream_id] = viz
+        else:
+            viz = NoOp()
+
         prediction_generator = infer(stream, horizon)
         next(prediction_generator)
 
         for idx, data_point in enumerate(stream):
+            if idx < start_index:
+                continue
+            if stop_index is not None and idx >= stop_index:
+                break
             x = data_point['x']
             prediction = next(prediction_generator)
             data = StreamPoint(substream_id=str(stream_id), value=x, ndx=idx)
             pred = Prediction(value=prediction, ndx=idx+horizon, horizon=horizon)
-            accounting.process(data, pred)
+            results.accounting_visualizer.process(data, pred)
             viz.process(data, pred)
             pnl.tick(data_point['x'], horizon, prediction)
             if idx % update_frequency == 0:
-                accounting.display()
+                results.accounting_visualizer.display()
                 viz.display()
         viz.display()
-        accounting.display()
+        results.accounting_visualizer.display()
+        results.scores[stream_id] = pnl.summary()['total_profit']
         print("Profit", stream_id, pnl.summary()['total_profit'])
-        score += pnl.summary()['total_profit']
-    return score
+        results.total_score += pnl.summary()['total_profit']
+
+    return results
