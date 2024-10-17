@@ -54,9 +54,8 @@ display_names = {
 }
 
 class AccountingDataVisualizer:
-    def __init__(self, account_model, update_every=100, **kwargs):
+    def __init__(self, account_model, **kwargs):
         self.n = 0
-        self.update_every = update_every
         self.kwargs = kwargs or {}
         self.account_model = account_model
         self.accountants = {}
@@ -80,8 +79,6 @@ class AccountingDataVisualizer:
         accountant = self.accountants[point.substream_id]
         accountant.tick(point.value, prediction.horizon, prediction.value)
         self.update_data(point.substream_id, accountant.summary())
-        if self.n % self.update_every == 0:
-            self.update_display()
 
     def update_data(self, stream_id: str, summary: Dict):
         if stream_id in self.df['stream_id'].values:
@@ -90,7 +87,7 @@ class AccountingDataVisualizer:
             new_row = {"stream_id": stream_id, **summary}
             self.df = pd.concat([self.df, pd.DataFrame([new_row])], ignore_index=True)
 
-    def update_display(self):
+    def display(self):
         with self.output:
             self.table_widget.value = self.data()
 
